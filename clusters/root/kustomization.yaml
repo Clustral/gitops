@@ -2,9 +2,9 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - longhorn-namespace.yaml
   - https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
   - https://raw.githubusercontent.com/longhorn/longhorn/v1.11.0/deploy/longhorn.yaml
+  - longhorn-namespace.yaml
   - metallb-config.yaml
 
 commonAnnotations:
