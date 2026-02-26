@@ -2,10 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - https://raw.githubusercontent.com/metallb/metallb/v0.15.3/config/manifests/metallb-native.yaml
-  - https://github.com/cert-manager/cert-manager/releases/download/v1.19.4/cert-manager.yaml
-  - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
-  - https://github.com/external-secrets/external-secrets/releases/download/v2.0.1/install.yaml
-
-commonAnnotations:
-  argocd.argoproj.io/sync-wave: "1"
+  - cert-manager.yaml
+  - external-secrets.yaml
+  - metallb.yaml
+  - gateway-api.yaml
