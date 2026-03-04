@@ -3,5 +3,6 @@ kind: Kustomization
 
 resources:
   - gateway-api.yaml
+  - gateway/
   - longhorn.yaml
   - metallb.yaml

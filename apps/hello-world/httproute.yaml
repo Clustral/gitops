@@ -5,8 +5,10 @@ metadata:
   namespace: hello-world
 spec:
   parentRefs:
-    - name: hello-world-gateway
-      namespace: hello-world
+    - name: shared-gateway
+      namespace: gateway
+  hostnames:
+    - hello-world.kube.it.com
   rules:
     - backendRefs:
         - name: hello-world
