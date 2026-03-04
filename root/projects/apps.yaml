@@ -6,9 +6,9 @@ metadata:
 spec:
   description: "Layer 3: Business workloads"
   sourceRepos:
-    - https://github.com/Clustral/gitops.git
+    - server: "*"
   destinations:
-    - server: https://kubernetes.default.svc
+    - server: "*"
       namespace: "*"
   namespaceResourceWhitelist:
     - group: "*"

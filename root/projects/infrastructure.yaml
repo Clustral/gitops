@@ -6,12 +6,9 @@ metadata:
 spec:
   description: "Layer 1: Cluster primitives — CNI, storage, load balancer, CRDs"
   sourceRepos:
-    - https://github.com/Clustral/gitops.git
-    - https://charts.longhorn.io
-    - https://metallb.github.io/metallb
-    - https://github.com/kubernetes-sigs/gateway-api
+    - "*"
   destinations:
-    - server: https://kubernetes.default.svc
+    - server: "*"
       namespace: "*"
   clusterResourceWhitelist:
     - group: "*"

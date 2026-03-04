@@ -6,14 +6,10 @@ metadata:
 spec:
   description: "Layer 2: Shared services consumed by applications"
   sourceRepos:
-    - https://github.com/Clustral/gitops.git
-    - https://charts.jetstack.io
-    - https://charts.external-secrets.io
+    - "*"
   destinations:
-    - server: https://kubernetes.default.svc
-      namespace: cert-manager
-    - server: https://kubernetes.default.svc
-      namespace: external-secrets
+    - server: "*"
+      namespace: "*"
   clusterResourceWhitelist:
     - group: "*"
       kind: "*"
