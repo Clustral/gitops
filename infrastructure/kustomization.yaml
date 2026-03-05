@@ -6,3 +6,4 @@ resources:
   - gateway/
   - longhorn.yaml
   - metallb.yaml
+  - metallb-config/
