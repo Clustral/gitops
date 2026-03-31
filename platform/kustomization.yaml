@@ -6,6 +6,7 @@ resources:
   - cert-manager.yaml
   - external-secrets.yaml
   - rabbitmq-operator.yaml
+  - rabbitmq-rbac.yaml
   - keycloak-operator.yaml
   - external-secrets-config-app.yaml
   - cert-manager-config-app.yaml
