@@ -8,9 +8,23 @@ metadata:
 spec:
   project: platform
   source:
-    repoURL: https://github.com/rabbitmq/cluster-operator
-    targetRevision: v2.9.0
-    path: config/default
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: rabbitmq-cluster-operator
+    targetRevision: 4.3.18
+    helm:
+      values: |
+        clusterOperator:
+          image:
+            registry: docker.io
+            repository: rabbitmqoperator/cluster-operator
+            tag: "v2.9.0"
+        msgTopologyOperator:
+          enabled: true
+          image:
+            registry: docker.io
+            repository: rabbitmqoperator/messaging-topology-operator-with-certmanager
+            tag: "v1.13.0"
+        useCertManager: true
   destination:
     server: https://kubernetes.default.svc
     namespace: rabbitmq-system
