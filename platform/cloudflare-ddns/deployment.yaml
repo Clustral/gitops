@@ -16,6 +16,8 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: cloudflare-ddns
           image: ghcr.io/favonia/cloudflare-ddns:1
