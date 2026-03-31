@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  resource.customizations.health.rabbitmq.com_RabbitmqCluster: |
+    hs = {}
+    if obj.status ~= nil then
+      if obj.status.conditions ~= nil then
+        for _, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Ready" then
+            if condition.status == "True" then
+              hs.status = "Healthy"
+              hs.message = condition.message
+              return hs
+            elseif condition.status == "False" then
+              hs.status = "Degraded"
+              hs.message = condition.message
+              return hs
+            end
+          end
+        end
+      end
+    end
+    hs.status = "Progressing"
+    hs.message = "Waiting for RabbitmqCluster to be ready"
+    return hs
+  resource.customizations.health.k8s.keycloak.org_Keycloak: |
+    hs = {}
+    if obj.status ~= nil then
+      if obj.status.conditions ~= nil then
+        for _, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Ready" then
+            if condition.status == "True" then
+              hs.status = "Healthy"
+              hs.message = condition.message
+              return hs
+            elseif condition.status == "False" then
+              hs.status = "Degraded"
+              hs.message = condition.message
+              return hs
+            end
+          end
+        end
+      end
+    end
+    hs.status = "Progressing"
+    hs.message = "Waiting for Keycloak to be ready"
+    return hs
