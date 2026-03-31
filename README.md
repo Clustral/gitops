@@ -73,18 +73,16 @@ kubectl create secret generic doppler-token \
 
 Once this secret exists, the `ClusterSecretStore` becomes ready and all `ExternalSecret` resources will sync automatically.
 
-### 4. Add the Cloudflare API token to Doppler
+### 4. Add secrets to Doppler
 
-In your Doppler project, create a secret named exactly:
+In your Doppler project, create the following secrets:
 
-```
-CLOUDFLARE_API_TOKEN
-```
+| Key | Value | Used by |
+|-----|-------|---------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with `Zone → DNS → Edit` on `kube.it.com` | cert-manager DNS-01 challenge |
+| `KEYCLOAK_DB_PASSWORD` | Strong random password | Keycloak PostgreSQL database |
 
-The token must have the following Cloudflare permissions:
-- `Zone → DNS → Edit` scoped to `kube.it.com`
-
-cert-manager will use this token for DNS-01 challenges to issue the wildcard certificate `*.kube.it.com`.
+cert-manager will use `CLOUDFLARE_API_TOKEN` for DNS-01 challenges to issue the wildcard certificate `*.kube.it.com`.
 
 ### 5. Update the Let's Encrypt email
 

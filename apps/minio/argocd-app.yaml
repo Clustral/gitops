@@ -6,9 +6,9 @@ metadata:
 spec:
   project: apps
   source:
-    repoURL: https://charts.bitnami.com/bitnami
+    repoURL: https://charts.min.io
     chart: minio
-    targetRevision: 14.6.15
+    targetRevision: 5.2.0
     helm:
       values: |
         mode: standalone
@@ -17,6 +17,8 @@ spec:
           storageClass: longhorn
           size: 20Gi
         service:
+          type: ClusterIP
+        consoleService:
           type: ClusterIP
   destination:
     server: https://kubernetes.default.svc

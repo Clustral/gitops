@@ -3,5 +3,7 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - argocd-app.yaml
+  - external-secret.yaml
+  - postgres.yaml
+  - keycloak.yaml
   - httproute.yaml

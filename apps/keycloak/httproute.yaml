@@ -11,5 +11,5 @@ spec:
     - keycloak.kube.it.com
   rules:
     - backendRefs:
-        - name: keycloak
-          port: 80
+        - name: keycloak-service
+          port: 8080
