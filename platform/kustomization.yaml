@@ -10,3 +10,4 @@ resources:
   - keycloak-operator.yaml
   - external-secrets-config-app.yaml
   - cert-manager-config-app.yaml
+  - cloudflare-ddns-app.yaml

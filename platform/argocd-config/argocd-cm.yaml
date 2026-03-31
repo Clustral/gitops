@@ -4,6 +4,7 @@ metadata:
   name: argocd-cm
   namespace: argocd
 data:
+  server.insecure: "true"
   resource.customizations.health.rabbitmq.com_RabbitmqCluster: |
     hs = {}
     if obj.status ~= nil then
