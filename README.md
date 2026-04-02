@@ -8,9 +8,9 @@ Three-layer sync-wave model. Each layer waits for the previous to be healthy bef
 
 ```
 root/               ArgoCD app-of-apps entry point
-├── infrastructure/ [wave 1] Cluster primitives — networking, storage, load balancer
-├── platform/       [wave 2] Shared services — cert-manager, external-secrets, operators
-└── apps/           [wave 3] Workloads — RabbitMQ, MinIO, Keycloak, hello-world
+├── infrastructure/ [wave 1] Cluster primitives + infrastructure services
+├── platform/       [wave 2] Shared services — cert-manager, external-secrets, operators, DDNS
+└── apps/           [wave 3] Workloads — hello-world
 ```
 
 ### Infrastructure
@@ -20,6 +20,10 @@ root/               ArgoCD app-of-apps entry point
 | MetalLB | Bare-metal load balancer, IP `192.168.88.100` | `metallb-system` |
 | Longhorn | Distributed block storage (default StorageClass) | `longhorn-system` |
 | Cilium Gateway | Shared ingress gateway (`shared-gateway`) | `gateway` |
+| RabbitMQ | 3-node HA cluster via Operator | `rabbitmq` |
+| MinIO | Object storage, standalone | `minio` |
+| Keycloak | Identity provider, bundled PostgreSQL | `keycloak-system` |
+| Vault | HashiCorp secrets management | `vault` |
 
 ### Platform
 
@@ -28,15 +32,26 @@ root/               ArgoCD app-of-apps entry point
 | cert-manager | TLS certificate issuance via Let's Encrypt | `cert-manager` |
 | external-secrets | Syncs secrets from Doppler into Kubernetes | `external-secrets` |
 | RabbitMQ Operator | Manages `RabbitmqCluster` CRDs | `rabbitmq-system` |
+| Keycloak Operator | Manages `Keycloak` CRDs | `keycloak-system` |
+| cloudflare-ddns | Keeps Cloudflare DNS A records in sync with public IP | `cloudflare-ddns` |
+| ArgoCD config | `argocd-cm` / `argocd-cmd-params-cm` patches | `argocd` |
 
 ### Apps
 
 | App | URL | Notes |
 |-----|-----|-------|
-| RabbitMQ | `rabbit.kube.it.com` | 3-node HA cluster via Operator, management UI on :15672 |
-| MinIO | `minio.kube.it.com` | Standalone, console UI on :9001 |
-| Keycloak | `keycloak.kube.it.com` | Bundled PostgreSQL, `proxy: edge` |
 | hello-world | `hello-world.kube.it.com` | nginx smoke-test app |
+
+### Services and their URLs
+
+| Service | URL |
+|---------|-----|
+| ArgoCD | `argocd.kube.it.com` |
+| Longhorn | `longhorn.kube.it.com` |
+| RabbitMQ | `rabbit.kube.it.com` |
+| MinIO | `minio.kube.it.com` |
+| Keycloak | `keycloak.kube.it.com` |
+| Vault | `vault.kube.it.com` |
 
 ---
 
@@ -63,7 +78,7 @@ ArgoCD will now deploy all three layers automatically in order.
 
 This is the **one secret that cannot come from Doppler itself** — it is the key that unlocks everything else.
 
-Get a service token from: Doppler → your project → Access → Service Tokens
+Get a service token from: Doppler → your project → Access → Service Tokens. The token needs **read and write permissions** so that PushSecrets can write auto-generated credentials back.
 
 ```bash
 kubectl create secret generic doppler-token \
@@ -75,42 +90,41 @@ Once this secret exists, the `ClusterSecretStore` becomes ready and all `Externa
 
 ### 4. Add secrets to Doppler
 
-In your Doppler project, create the following secrets:
+In your Doppler project, create the following secrets before ArgoCD reaches the platform wave:
 
 | Key | Value | Used by |
 |-----|-------|---------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with `Zone → DNS → Edit` on `kube.it.com` | cert-manager DNS-01 challenge |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with `Zone → DNS → Edit` on `kube.it.com` | cert-manager DNS-01 + cloudflare-ddns |
 | `KEYCLOAK_DB_PASSWORD` | Strong random password | Keycloak PostgreSQL database |
 
-cert-manager will use `CLOUDFLARE_API_TOKEN` for DNS-01 challenges to issue the wildcard certificate `*.kube.it.com`.
+The following secrets are **written back to Doppler automatically** by PushSecrets once the services are running:
 
-### 5. Update the Let's Encrypt email
+| Key | Written by |
+|-----|-----------|
+| `ARGOCD_ADMIN_PASSWORD` | ArgoCD initial admin secret |
+| `RABBITMQ_DEFAULT_USERNAME` | RabbitMQ Operator |
+| `RABBITMQ_DEFAULT_PASSWORD` | RabbitMQ Operator |
+| `RABBITMQ_HOST` | RabbitMQ Operator |
+| `RABBITMQ_PORT` | RabbitMQ Operator |
+| `MINIO_ROOT_USER` | MinIO Helm chart |
+| `MINIO_ROOT_PASSWORD` | MinIO Helm chart |
+| `KEYCLOAK_ADMIN_USERNAME` | Keycloak Operator |
+| `KEYCLOAK_ADMIN_PASSWORD` | Keycloak Operator |
 
-Replace the placeholder email in both ClusterIssuer files:
+### 5. DNS — Cloudflare setup
 
-```
-platform/cert-manager-config/clusterissuer-staging.yaml
-platform/cert-manager-config/clusterissuer-prod.yaml
-```
+DNS records are managed automatically by `cloudflare-ddns` once deployed. It keeps all subdomain A records pointed at your current public IP and refreshes every 10 seconds.
 
-Change `your-email@example.com` to your real email. Let's Encrypt uses this for expiry notifications.
-
-### 6. DNS — point the domain to the cluster
-
-Add an A record for every subdomain pointing to the MetalLB IP `192.168.88.100`:
-
-```
-rabbit.kube.it.com      → 192.168.88.100
-minio.kube.it.com       → 192.168.88.100
-keycloak.kube.it.com    → 192.168.88.100
-hello-world.kube.it.com → 192.168.88.100
-```
-
-Or use a wildcard record:
+For the initial bootstrap (before cloudflare-ddns is running), you can manually add a wildcard A record in Cloudflare:
 
 ```
-*.kube.it.com → 192.168.88.100
+*.kube.it.com → <your public IP>
 ```
+
+**Important Cloudflare settings:**
+- SSL/TLS mode must be set to **Full (Strict)** — Cloudflare proxies the connection and forwards it to the origin on HTTPS port 443
+- The Cilium gateway terminates TLS using the Let's Encrypt wildcard cert; Cloudflare handles client-facing TLS separately
+- Port forwarding on the router: `443 → 192.168.88.100:443`
 
 ---
 
@@ -132,43 +146,57 @@ The wildcard certificate covers all subdomains under `kube.it.com`. It is stored
 
 ---
 
+## Vault — initial setup
+
+Vault deploys in a sealed state and requires one-time manual initialization:
+
+```bash
+# Initialize Vault (generates unseal keys + root token)
+kubectl exec -n vault vault-0 -- vault operator init
+
+# Unseal (run 3 times with different keys from the output above)
+kubectl exec -n vault vault-0 -- vault operator unseal <unseal-key>
+```
+
+Save the unseal keys and root token in Doppler immediately after initialization.
+
+---
+
 ## RabbitMQ — credentials
 
-The RabbitMQ Operator creates a default user secret automatically:
+The RabbitMQ Operator creates a default user secret automatically. Credentials are also pushed to Doppler via PushSecret:
 
 ```bash
 kubectl get secret rabbitmq-default-user -n rabbitmq -o jsonpath='{.data.username}' | base64 -d
 kubectl get secret rabbitmq-default-user -n rabbitmq -o jsonpath='{.data.password}' | base64 -d
 ```
 
-For production use, manage credentials via the Messaging Topology Operator:
-
-```yaml
-apiVersion: rabbitmq.com/v1beta1
-kind: User
-metadata:
-  name: my-app
-  namespace: rabbitmq
-spec:
-  rabbitmqClusterReference:
-    name: rabbitmq
-```
-
 ---
+
+## Adding a new infrastructure service
+
+1. Create `infrastructure/<service-name>/` with:
+   - `argocd-app.yaml` — ArgoCD Application (for Helm charts) or raw manifests
+   - `httproute.yaml` — HTTPRoute pointing to `shared-gateway` in `gateway` namespace
+   - `kustomization.yaml` — listing all of the above
+
+2. Add `- <service-name>/` to `infrastructure/kustomization.yaml`
+
+3. Add the subdomain to `DOMAINS` in `platform/cloudflare-ddns/deployment.yaml`
+
+The wildcard TLS cert covers the new subdomain automatically — no cert changes needed.
 
 ## Adding a new app
 
 1. Create `apps/<app-name>/` with:
    - `namespace.yaml` — Namespace
    - `httproute.yaml` — HTTPRoute pointing to `shared-gateway` in `gateway` namespace
-   - Any other manifests (Deployment, Service) or an `argocd-app.yaml` for Helm charts
+   - Any other manifests or an `argocd-app.yaml` for Helm charts
    - `kustomization.yaml` — listing all of the above
 
 2. Add `- <app-name>/` to `apps/kustomization.yaml`
 
-3. Add a DNS record `<app>.kube.it.com → 192.168.88.100`
-
-The wildcard TLS cert covers the new subdomain automatically — no cert changes needed.
+3. Add the subdomain to `DOMAINS` in `platform/cloudflare-ddns/deployment.yaml`
 
 ---
 
@@ -183,13 +211,22 @@ kubectl describe certificate kube-it-com-wildcard -n gateway
 kubectl describe certificaterequest -n gateway
 
 # Check ExternalSecret sync status
-kubectl get externalsecret -n cert-manager
+kubectl get externalsecret -A
 kubectl get clustersecretstore
+
+# Check PushSecret status
+kubectl get pushsecret -A
 
 # RabbitMQ cluster health
 kubectl get rabbitmqcluster -n rabbitmq
 kubectl exec -n rabbitmq rabbitmq-server-0 -- rabbitmq-diagnostics cluster_status
 
+# Vault status
+kubectl exec -n vault vault-0 -- vault status
+
 # Force ArgoCD to sync immediately
 argocd app sync <app-name>
+
+# Restart ArgoCD server (e.g. after config changes)
+kubectl rollout restart deployment argocd-server -n argocd
 ```

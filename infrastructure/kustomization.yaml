@@ -10,3 +10,4 @@ resources:
   - rabbitmq/
   - minio/
   - keycloak/
+  - vault/
