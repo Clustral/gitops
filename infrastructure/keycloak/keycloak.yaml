@@ -18,6 +18,8 @@ spec:
       key: password
   http:
     httpEnabled: true
+  proxy:
+    headers: xforwarded
   ingress:
     enabled: false
   hostname:
