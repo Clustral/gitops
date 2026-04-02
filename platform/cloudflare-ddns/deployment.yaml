@@ -35,7 +35,8 @@ spec:
                 minio.kube.it.com,
                 keycloak.kube.it.com,
                 vault.kube.it.com,
-                vpn.kube.it.com
+                vpn.kube.it.com,
+                hello-world.kube.it.com
             - name: PROXIED
               value: "true"
             - name: UPDATE_CRON
