@@ -12,4 +12,4 @@ spec:
   rules:
     - backendRefs:
         - name: teleport
-          port: 3080
+          port: 443
