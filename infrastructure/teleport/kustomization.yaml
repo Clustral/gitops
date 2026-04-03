@@ -4,4 +4,6 @@ kind: Kustomization
 resources:
   - argocd-app.yaml
   - certificate.yaml
+  - letsencrypt-ca.yaml
+  - backend-tls-policy.yaml
   - httproute.yaml
