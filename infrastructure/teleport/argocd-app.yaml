@@ -13,8 +13,6 @@ spec:
       values: |
         clusterName: teleport.kube.it.com
         acme: false
-        tls:
-          existingSecretName: teleport-tls
         service:
           type: ClusterIP
         persistence:
