@@ -1,5 +1,5 @@
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
 metadata:
   name: teleport
   namespace: teleport
@@ -7,6 +7,7 @@ spec:
   parentRefs:
     - name: shared-gateway
       namespace: gateway
+      sectionName: teleport-passthrough
   hostnames:
     - teleport.kube.it.com
   rules:
