@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: teleport
+  namespace: argocd
+spec:
+  project: infrastructure
+  source:
+    repoURL: https://charts.releases.teleport.dev
+    chart: teleport-cluster
+    targetRevision: 16.4.12
+    helm:
+      values: |
+        clusterName: teleport.kube.it.com
+        acme: false
+        service:
+          type: ClusterIP
+        persistence:
+          enabled: true
+          storageClassName: longhorn
+          size: 10Gi
+        proxyListenerMode: multiplex
+        auth:
+          teleportConfig:
+            auth_service:
+              authentication:
+                type: local
+                second_factor: "on"
+                webauthn:
+                  rp_id: teleport.kube.it.com
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: teleport
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

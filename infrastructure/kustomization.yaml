@@ -11,3 +11,4 @@ resources:
   - minio/
   - keycloak/
   - vault/
+  - teleport/
