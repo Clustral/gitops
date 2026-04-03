@@ -13,8 +13,6 @@ spec:
       values: |
         clusterName: teleport.kube.it.com
         acme: false
-        tls:
-          existingSecretName: teleport-tls
         service:
           type: ClusterIP
         persistence:
@@ -30,6 +28,11 @@ spec:
                 second_factor: "on"
                 webauthn:
                   rp_id: teleport.kube.it.com
+        proxy:
+          teleportConfig:
+            proxy_service:
+              public_addr: "teleport.kube.it.com:443"
+              https_keypairs: []
   destination:
     server: https://kubernetes.default.svc
     namespace: teleport
