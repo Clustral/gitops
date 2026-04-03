@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - gateway/
+  - cilium-config-app.yaml
   - longhorn-config.yaml
   - longhorn.yaml
   - metallb.yaml
